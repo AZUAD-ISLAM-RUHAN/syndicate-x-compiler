@@ -13,3 +13,4 @@ mcc
 .vscode/
 *.swp
 .DS_Store
+mylexer
