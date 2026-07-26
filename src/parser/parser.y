@@ -1,11 +1,19 @@
+%code requires {
+    #include "ast.h"
+}
+
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include "ast.h"
 
 int yylex(void);
 void yyerror(const char *s);
 extern int line_num;
+ASTNode *root;
 %}
+
+%define api.value.type {ASTNode *}
 
 %token INT_KW FLOAT_KW BOOL_KW IF ELSE WHILE PRINT
 %token TRUE_KW FALSE_KW
@@ -28,75 +36,87 @@ extern int line_num;
 
 program:
     statement_list
-    { printf("Parsing successful. No syntax errors.\n"); }
+    {
+        root = new_node(NODE_PROGRAM, NULL, 1, $1);
+        printf("Parsing successful. No syntax errors.\n");
+        printf("\n--- Abstract Syntax Tree ---\n");
+        print_ast(root, 0);
+    }
     ;
 
 statement_list:
-    /* empty */
-    | statement_list statement
+      /* empty */ { $$ = new_node(NODE_BLOCK, NULL, 0); }
+    | statement_list statement { add_child($1, $2); $$ = $1; }
     ;
 
 statement:
-    declaration
-    | assignment
-    | if_stmt
-    | while_stmt
-    | print_stmt
-    | block
+      declaration { $$ = $1; }
+    | assignment { $$ = $1; }
+    | if_stmt { $$ = $1; }
+    | while_stmt { $$ = $1; }
+    | print_stmt { $$ = $1; }
+    | block { $$ = $1; }
     ;
 
 declaration:
     type ID SEMI
+    { $$ = new_node(NODE_DECL, NULL, 2, $1, $2); }
     ;
 
 type:
-    INT_KW
-    | FLOAT_KW
-    | BOOL_KW
+      INT_KW { $$ = new_leaf(NODE_TYPE, "int"); }
+    | FLOAT_KW { $$ = new_leaf(NODE_TYPE, "float"); }
+    | BOOL_KW { $$ = new_leaf(NODE_TYPE, "bool"); }
     ;
 
 assignment:
     ID ASSIGN expr SEMI
+    { $$ = new_node(NODE_ASSIGN, NULL, 2, $1, $3); }
     ;
 
 if_stmt:
-    IF LPAREN expr RPAREN block
+      IF LPAREN expr RPAREN block
+      { $$ = new_node(NODE_IF, NULL, 2, $3, $5); }
     | IF LPAREN expr RPAREN block ELSE block
+      { $$ = new_node(NODE_IF, "else", 3, $3, $5, $7); }
     ;
 
 while_stmt:
     WHILE LPAREN expr RPAREN block
+    { $$ = new_node(NODE_WHILE, NULL, 2, $3, $5); }
     ;
 
 print_stmt:
     PRINT expr SEMI
+    { $$ = new_node(NODE_PRINT, NULL, 1, $2); }
     ;
 
 block:
     LBRACE statement_list RBRACE
+    { $$ = $2; }
     ;
 
 expr:
-    expr PLUS expr
-    | expr MINUS expr
-    | expr TIMES expr
-    | expr DIVIDE expr
-    | expr MOD expr
-    | expr LT expr
-    | expr GT expr
-    | expr LE expr
-    | expr GE expr
-    | expr EQ expr
-    | expr NEQ expr
-    | expr AND expr
-    | expr OR expr
-    | NOT expr
-    | LPAREN expr RPAREN
-    | ID
-    | INT_CONST
-    | FLOAT_CONST
-    | TRUE_KW
-    | FALSE_KW
+      expr PLUS expr   { $$ = new_node(NODE_BINOP, "+", 2, $1, $3); }
+    | expr MINUS expr  { $$ = new_node(NODE_BINOP, "-", 2, $1, $3); }
+    | expr TIMES expr  { $$ = new_node(NODE_BINOP, "*", 2, $1, $3); }
+    | expr DIVIDE expr { $$ = new_node(NODE_BINOP, "/", 2, $1, $3); }
+    | expr MOD expr    { $$ = new_node(NODE_BINOP, "%", 2, $1, $3); }
+    | expr LT expr     { $$ = new_node(NODE_BINOP, "<", 2, $1, $3); }
+    | expr GT expr     { $$ = new_node(NODE_BINOP, ">", 2, $1, $3); }
+    | expr LE expr     { $$ = new_node(NODE_BINOP, "<=", 2, $1, $3); }
+    | expr GE expr     { $$ = new_node(NODE_BINOP, ">=", 2, $1, $3); }
+    | expr EQ expr     { $$ = new_node(NODE_BINOP, "==", 2, $1, $3); }
+    | expr NEQ expr    { $$ = new_node(NODE_BINOP, "!=", 2, $1, $3); }
+    | expr AND expr    { $$ = new_node(NODE_BINOP, "&&", 2, $1, $3); }
+    | expr OR expr     { $$ = new_node(NODE_BINOP, "||", 2, $1, $3); }
+    | NOT expr         { $$ = new_node(NODE_UNOP, "!", 1, $2); }
+    | LPAREN expr RPAREN { $$ = $2; }
+    | ID    { $$ = $1; }
+    | INT_CONST { $$ = $1; }
+    | FLOAT_CONST { $$ = $1; }
+    | TRUE_KW { $$ = new_leaf(NODE_BOOL, "true"); }
+    | FALSE_KW { $$ = new_leaf(NODE_BOOL, "false"); }
     ;
 
 %%

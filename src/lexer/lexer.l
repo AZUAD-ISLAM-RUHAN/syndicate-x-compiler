@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "ast.h"
 #include "y.tab.h"
 
 int line_num = 1;
@@ -53,10 +54,10 @@ FLOAT_PATTERN {DIGIT}+"."{DIGIT}+
 ")"     { return RPAREN; }
 ";"     { return SEMI;   }
 
-{FLOAT_PATTERN}   { return FLOAT_CONST; }
-{INT_PATTERN}     { return INT_CONST;   }
+{FLOAT_PATTERN}   { yylval = new_leaf(NODE_FLOAT, yytext); return FLOAT_CONST; }
+{INT_PATTERN}     { yylval = new_leaf(NODE_INT, yytext);   return INT_CONST;   }
 
-{ID_PATTERN}      { return ID; }
+{ID_PATTERN}      { yylval = new_leaf(NODE_ID, yytext); return ID; }
 
 .               { printf("Lexical Error at line %d: unexpected character '%s'\n", line_num, yytext); }
 
