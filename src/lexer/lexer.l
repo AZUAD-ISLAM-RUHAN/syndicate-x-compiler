@@ -2,15 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "y.tab.h"
 
 int line_num = 1;
 %}
 
 DIGIT       [0-9]
 LETTER      [a-zA-Z_]
-ID          {LETTER}({LETTER}|{DIGIT})*
-INT_CONST   {DIGIT}+
-FLOAT_CONST {DIGIT}+"."{DIGIT}+
+ID_PATTERN  {LETTER}({LETTER}|{DIGIT})*
+INT_PATTERN   {DIGIT}+
+FLOAT_PATTERN {DIGIT}+"."{DIGIT}+
 
 %%
 
@@ -20,42 +21,42 @@ FLOAT_CONST {DIGIT}+"."{DIGIT}+
 "//".*                          { }
 "/*"([^*]|\*+[^*/])*\*+"/"      { }
 
-"int"       { printf("<KEYWORD, int>\n");    }
-"float"     { printf("<KEYWORD, float>\n");  }
-"bool"      { printf("<KEYWORD, bool>\n");   }
-"if"        { printf("<KEYWORD, if>\n");     }
-"else"      { printf("<KEYWORD, else>\n");   }
-"while"     { printf("<KEYWORD, while>\n");  }
-"print"     { printf("<KEYWORD, print>\n");  }
-"true"      { printf("<BOOL_CONST, true>\n");  }
-"false"     { printf("<BOOL_CONST, false>\n"); }
+"int"       { return INT_KW;   }
+"float"     { return FLOAT_KW; }
+"bool"      { return BOOL_KW;  }
+"if"        { return IF;       }
+"else"      { return ELSE;     }
+"while"     { return WHILE;    }
+"print"     { return PRINT;    }
+"true"      { return TRUE_KW;  }
+"false"     { return FALSE_KW; }
 
-"+"     { printf("<OP, +>\n");  }
-"-"     { printf("<OP, ->\n");  }
-"*"     { printf("<OP, *>\n");  }
-"/"     { printf("<OP, />\n");  }
-"%"     { printf("<OP, %%>\n"); }
-"<="    { printf("<OP, <=>\n"); }
-">="    { printf("<OP, >=>\n"); }
-"=="    { printf("<OP, ==>\n"); }
-"!="    { printf("<OP, !=>\n"); }
-"<"     { printf("<OP, <>\n");  }
-">"     { printf("<OP, >>\n");  }
-"&&"    { printf("<OP, &&>\n"); }
-"||"    { printf("<OP, ||>\n"); }
-"!"     { printf("<OP, !>\n");  }
-"="     { printf("<ASSIGN, =>\n"); }
+"+"     { return PLUS;   }
+"-"     { return MINUS;  }
+"*"     { return TIMES;  }
+"/"     { return DIVIDE; }
+"%"     { return MOD;    }
+"<="    { return LE;     }
+">="    { return GE;     }
+"=="    { return EQ;     }
+"!="    { return NEQ;    }
+"<"     { return LT;     }
+">"     { return GT;     }
+"&&"    { return AND;    }
+"||"    { return OR;     }
+"!"     { return NOT;    }
+"="     { return ASSIGN; }
 
-"{"     { printf("<LBRACE, {>\n"); }
-"}"     { printf("<RBRACE, }>\n"); }
-"("     { printf("<LPAREN, (>\n"); }
-")"     { printf("<RPAREN, )>\n"); }
-";"     { printf("<SEMI, ;>\n");   }
+"{"     { return LBRACE; }
+"}"     { return RBRACE; }
+"("     { return LPAREN; }
+")"     { return RPAREN; }
+";"     { return SEMI;   }
 
-{FLOAT_CONST}   { printf("<FLOAT_CONST, %s>\n", yytext); }
-{INT_CONST}     { printf("<INT_CONST, %s>\n", yytext);   }
+{FLOAT_PATTERN}   { return FLOAT_CONST; }
+{INT_PATTERN}     { return INT_CONST;   }
 
-{ID}            { printf("<ID, %s>\n", yytext); }
+{ID_PATTERN}      { return ID; }
 
 .               { printf("Lexical Error at line %d: unexpected character '%s'\n", line_num, yytext); }
 
@@ -63,19 +64,4 @@ FLOAT_CONST {DIGIT}+"."{DIGIT}+
 
 int yywrap(void) {
     return 1;
-}
-
-int main(int argc, char **argv) {
-    if (argc > 1) {
-        FILE *file = fopen(argv[1], "r");
-        if (!file) {
-            printf("Error: cannot open file %s\n", argv[1]);
-            return 1;
-        }
-        yyin = file;
-    }
-
-    yylex();
-
-    return 0;
 }
