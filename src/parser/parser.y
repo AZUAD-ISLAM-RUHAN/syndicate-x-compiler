@@ -6,11 +6,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ast.h"
+#include "symbol_table.h"
 
 int yylex(void);
 void yyerror(const char *s);
 extern int line_num;
 ASTNode *root;
+int semantic_errors = 0;
 %}
 
 %define api.value.type {ASTNode *}
@@ -60,7 +62,13 @@ statement:
 
 declaration:
     type ID SEMI
-    { $$ = new_node(NODE_DECL, NULL, 2, $1, $2); }
+    {
+        $$ = new_node(NODE_DECL, NULL, 2, $1, $2);
+        if (insert_symbol($2->value, $1->value, line_num) == -1) {
+            printf("Semantic Error at line %d: Variable '%s' already declared in this scope\n", line_num, $2->value);
+            semantic_errors++;
+        }
+    }
     ;
 
 type:
@@ -92,8 +100,11 @@ print_stmt:
     ;
 
 block:
-    LBRACE statement_list RBRACE
-    { $$ = $2; }
+    LBRACE { enter_scope(); } statement_list RBRACE
+    {
+        exit_scope();
+        $$ = $3;
+    }
     ;
 
 expr:
@@ -134,6 +145,8 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
+    enter_scope();
     yyparse();
+    exit_scope();
     return 0;
 }
