@@ -9,6 +9,7 @@
 #include "ast.h"
 #include "symbol_table.h"
 #include "semantic.h"
+#include "tac.h"
 
 int yylex(void);
 void yyerror(const char *s);
@@ -47,8 +48,11 @@ program:
         print_ast(root, 0);
         if (semantic_errors == 0) {
             printf("\nSemantic analysis passed. No semantic errors.\n");
+            printf("\n--- Three Address Code (TAC) ---\n");
+            generate_tac(root);
         } else {
             printf("\nSemantic analysis found %d error(s).\n", semantic_errors);
+            printf("\n(TAC not generated due to semantic errors)\n");
         }
     }
     ;
