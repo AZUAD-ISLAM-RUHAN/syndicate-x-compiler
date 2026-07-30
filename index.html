@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Syndicate X Compiler</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #161925;
+    --border: #2a2f42;
+    --accent: #6d8cff;
+    --text: #e4e6ef;
+    --muted: #8b90a8;
+    --error: #ff6b6b;
+    --success: #4ade80;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  header h1 {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  header span {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  .panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .panel + .panel {
+    border-left: 1px solid var(--border);
+  }
+  .panel-header {
+    padding: 10px 16px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  textarea {
+    flex: 1;
+    background: var(--panel);
+    color: var(--text);
+    border: none;
+    padding: 16px;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: none;
+    outline: none;
+  }
+  pre#output {
+    flex: 1;
+    margin: 0;
+    padding: 16px;
+    background: var(--panel);
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  button {
+    background: var(--accent);
+    color: #0f1117;
+    border: none;
+    padding: 6px 16px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .status {
+    font-size: 12px;
+  }
+  .status.ok { color: var(--success); }
+  .status.err { color: var(--error); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Syndicate X &mdash; Mini Language Compiler</h1>
+  <span>Lexer &rarr; Parser &rarr; AST &rarr; Symbol Table &rarr; Semantic Analysis &rarr; TAC</span>
+</header>
+
+<main>
+  <div class="panel">
+    <div class="panel-header">
+      <span>Source Code (.mc)</span>
+      <button id="runBtn">Compile ▶</button>
+    </div>
+    <textarea id="code" spellcheck="false">int x;
+int y;
+x = 10;
+y = 0;
+while (x > 0) {
+    y = y + x;
+    x = x - 1;
+}
+print y;</textarea>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span>Output</span>
+      <span class="status" id="status"></span>
+    </div>
+    <pre id="output">Click "Compile" to run your program through the compiler.</pre>
+  </div>
+</main>
+
+<script>
+const runBtn = document.getElementById('runBtn');
+const output = document.getElementById('output');
+const status = document.getElementById('status');
+const codeBox = document.getElementById('code');
+
+runBtn.addEventListener('click', async () => {
+  runBtn.disabled = true;
+  status.textContent = 'Compiling...';
+  status.className = 'status';
+  output.textContent = '';
+
+  try {
+    const res = await fetch('/compile', {
+      method: 'POST',
+      body: codeBox.value
+    });
+    const text = await res.text();
+    output.textContent = text;
+
+    if (text.includes('Error') || text.includes('error')) {
+      status.textContent = 'Finished with errors';
+      status.className = 'status err';
+    } else {
+      status.textContent = 'Success';
+      status.className = 'status ok';
+    }
+  } catch (e) {
+    output.textContent = 'Failed to reach server: ' + e;
+    status.textContent = 'Connection error';
+    status.className = 'status err';
+  } finally {
+    runBtn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
