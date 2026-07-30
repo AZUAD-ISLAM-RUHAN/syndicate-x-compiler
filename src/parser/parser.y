@@ -5,8 +5,10 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ast.h"
 #include "symbol_table.h"
+#include "semantic.h"
 
 int yylex(void);
 void yyerror(const char *s);
@@ -43,6 +45,11 @@ program:
         printf("Parsing successful. No syntax errors.\n");
         printf("\n--- Abstract Syntax Tree ---\n");
         print_ast(root, 0);
+        if (semantic_errors == 0) {
+            printf("\nSemantic analysis passed. No semantic errors.\n");
+        } else {
+            printf("\nSemantic analysis found %d error(s).\n", semantic_errors);
+        }
     }
     ;
 
@@ -79,24 +86,51 @@ type:
 
 assignment:
     ID ASSIGN expr SEMI
-    { $$ = new_node(NODE_ASSIGN, NULL, 2, $1, $3); }
+    {
+        $$ = new_node(NODE_ASSIGN, NULL, 2, $1, $3);
+        Symbol *sym = lookup_symbol($1->value);
+        if (!sym) {
+            printf("Semantic Error at line %d: Undeclared variable '%s'\n", line_num, $1->value);
+            semantic_errors++;
+        } else {
+            char *rhs_type = get_expr_type($3);
+            if (strcmp(rhs_type, "error") != 0 && strcmp(sym->type, rhs_type) != 0) {
+                if (!(strcmp(sym->type, "float") == 0 && strcmp(rhs_type, "int") == 0)) {
+                    printf("Semantic Error at line %d: Invalid assignment - cannot assign '%s' to variable '%s' of type '%s'\n", line_num, rhs_type, $1->value, sym->type);
+                    semantic_errors++;
+                }
+            }
+        }
+    }
     ;
 
 if_stmt:
       IF LPAREN expr RPAREN block
-      { $$ = new_node(NODE_IF, NULL, 2, $3, $5); }
+      {
+          get_expr_type($3);
+          $$ = new_node(NODE_IF, NULL, 2, $3, $5);
+      }
     | IF LPAREN expr RPAREN block ELSE block
-      { $$ = new_node(NODE_IF, "else", 3, $3, $5, $7); }
+      {
+          get_expr_type($3);
+          $$ = new_node(NODE_IF, "else", 3, $3, $5, $7);
+      }
     ;
 
 while_stmt:
     WHILE LPAREN expr RPAREN block
-    { $$ = new_node(NODE_WHILE, NULL, 2, $3, $5); }
+    {
+        get_expr_type($3);
+        $$ = new_node(NODE_WHILE, NULL, 2, $3, $5);
+    }
     ;
 
 print_stmt:
     PRINT expr SEMI
-    { $$ = new_node(NODE_PRINT, NULL, 1, $2); }
+    {
+        get_expr_type($2);
+        $$ = new_node(NODE_PRINT, NULL, 1, $2);
+    }
     ;
 
 block:
