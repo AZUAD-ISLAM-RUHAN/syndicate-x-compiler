@@ -17,3 +17,4 @@ mylexer
 y.tab.c
 y.tab.h
 myparser
+compiler
