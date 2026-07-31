@@ -2,127 +2,280 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Syndicate X Compiler</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Syndicate X — Case File Compiler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f1117;
-    --panel: #161925;
-    --border: #2a2f42;
-    --accent: #6d8cff;
-    --text: #e4e6ef;
-    --muted: #8b90a8;
-    --error: #ff6b6b;
-    --success: #4ade80;
+    --paper: #ece2cd;
+    --paper-dark: #ddcfae;
+    --ink: #2b241c;
+    --ink-faded: #6b5f4c;
+    --stamp-red: #a1382b;
+    --stamp-green: #3d5a3d;
+    --tan: #c9a876;
+    --navy: #33465a;
+    --line: rgba(43, 36, 28, 0.18);
   }
+
   * { box-sizing: border-box; }
+
   body {
     margin: 0;
-    font-family: 'Consolas', 'Courier New', monospace;
-    background: var(--bg);
-    color: var(--text);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
+    min-height: 100vh;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0px, transparent 1px, transparent 2px),
+      radial-gradient(ellipse at top left, var(--paper-dark), var(--paper) 60%);
+    color: var(--ink);
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    padding: 28px;
   }
-  header {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
+
+  .folder {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .tab {
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 14px;
+    background: var(--tan);
+    border: 2px solid var(--ink);
+    border-bottom: none;
+    padding: 10px 28px 8px;
+    border-radius: 8px 8px 0 0;
+    transform: translateY(2px);
+    box-shadow: 0 -2px 0 rgba(0,0,0,0.05) inset;
   }
-  header h1 {
-    font-size: 18px;
-    margin: 0;
-    font-weight: 600;
+
+  .tab .badge {
+    width: 34px; height: 34px;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Special Elite', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    background: var(--paper);
+    flex-shrink: 0;
+  }
+
+  .tab .tab-text {
+    font-family: 'Special Elite', monospace;
+    letter-spacing: 1px;
+    font-size: 14px;
+  }
+  .tab .tab-text .case-no {
+    display: block;
+    font-size: 10px;
+    color: var(--ink-faded);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  .case-body {
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    border-radius: 0 10px 10px 10px;
+    padding: 24px;
+    position: relative;
+    box-shadow: 6px 6px 0 rgba(43,36,28,0.08);
+  }
+
+  .case-title {
+    font-family: 'Special Elite', monospace;
+    font-size: 26px;
+    letter-spacing: 1px;
+    margin: 0 0 4px;
+  }
+
+  .case-subtitle {
+    font-size: 12px;
+    color: var(--ink-faded);
+    letter-spacing: 1px;
+    margin: 0 0 22px;
+    border-bottom: 1px dashed var(--line);
+    padding-bottom: 16px;
+  }
+
+  .pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--ink-faded);
     letter-spacing: 0.5px;
   }
-  header span {
-    color: var(--muted);
-    font-size: 13px;
+  .pipeline span:not(.arrow) {
+    border: 1px solid var(--line);
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.02);
   }
-  main {
-    flex: 1;
-    display: flex;
-    min-height: 0;
+  .pipeline .arrow { color: var(--ink-faded); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin-top: 24px;
   }
-  .panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
+  @media (max-width: 860px) {
+    .grid { grid-template-columns: 1fr; }
   }
-  .panel + .panel {
-    border-left: 1px solid var(--border);
-  }
-  .panel-header {
-    padding: 10px 16px;
+
+  .panel-label {
+    font-family: 'Special Elite', monospace;
     font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
+    letter-spacing: 2px;
+    color: var(--ink-faded);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 8px;
   }
+
+  .exhibit-tag {
+    display: inline-block;
+    background: var(--navy);
+    color: var(--paper);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
   textarea {
-    flex: 1;
-    background: var(--panel);
-    color: var(--text);
-    border: none;
-    padding: 16px;
-    font-family: inherit;
+    width: 100%;
+    height: 340px;
+    resize: vertical;
+    background:
+      repeating-linear-gradient(var(--paper) 0px, var(--paper) 27px, rgba(43,36,28,0.12) 28px);
+    border: 1.5px solid var(--ink);
+    border-left: 3px solid var(--stamp-red);
+    padding: 12px 14px;
+    font-family: 'Courier Prime', 'Courier New', monospace;
     font-size: 14px;
-    line-height: 1.6;
-    resize: none;
+    line-height: 28px;
+    color: var(--ink);
     outline: none;
   }
+
+  .output-wrap {
+    position: relative;
+    overflow: hidden;
+  }
+
   pre#output {
-    flex: 1;
+    width: 100%;
+    height: 340px;
     margin: 0;
-    padding: 16px;
-    background: var(--panel);
-    overflow-y: auto;
-    font-size: 13px;
+    background: var(--paper);
+    border: 1.5px solid var(--ink);
+    border-left: 3px solid var(--navy);
+    padding: 14px;
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    font-size: 12.5px;
     line-height: 1.6;
+    overflow-y: auto;
     white-space: pre-wrap;
     word-break: break-word;
   }
-  button {
-    background: var(--accent);
-    color: #0f1117;
+
+  .stamp {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    border: 4px double var(--stamp-green);
+    color: var(--stamp-green);
+    font-family: 'Special Elite', monospace;
+    font-size: 20px;
+    letter-spacing: 3px;
+    padding: 8px 16px;
+    transform: rotate(-10deg);
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: none;
+    background: rgba(236, 226, 205, 0.85);
+    mix-blend-mode: multiply;
+  }
+  .stamp.show { opacity: 1; transform: rotate(-10deg) scale(1); }
+  .stamp.error { border-color: var(--stamp-red); color: var(--stamp-red); }
+
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+  }
+
+  button#runBtn {
+    font-family: 'Special Elite', monospace;
+    letter-spacing: 1.5px;
+    font-size: 14px;
+    background: var(--ink);
+    color: var(--paper);
     border: none;
-    padding: 6px 16px;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 4px;
+    padding: 12px 26px;
+    border-radius: 3px;
     cursor: pointer;
   }
-  button:hover { opacity: 0.9; }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-  .status {
-    font-size: 12px;
+  button#runBtn:hover { background: var(--navy); }
+  button#runBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .status-line {
+    font-size: 11px;
+    color: var(--ink-faded);
+    letter-spacing: 1px;
   }
-  .status.ok { color: var(--success); }
-  .status.err { color: var(--error); }
+
+  .brad {
+    position: absolute;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #9a9a9a, #4a4a4a 70%);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  .brad.tl { top: 12px; left: 12px; }
+  .brad.tr { top: 12px; right: 12px; }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Syndicate X &mdash; Mini Language Compiler</h1>
-  <span>Lexer &rarr; Parser &rarr; AST &rarr; Symbol Table &rarr; Semantic Analysis &rarr; TAC</span>
-</header>
-
-<main>
-  <div class="panel">
-    <div class="panel-header">
-      <span>Source Code (.mc)</span>
-      <button id="runBtn">Compile ▶</button>
+<div class="folder">
+  <div class="tab">
+    <div class="badge">X</div>
+    <div class="tab-text">
+      SYNDICATE X
+      <span class="case-no">MINI-LANGUAGE COMPILER DIVISION</span>
     </div>
-    <textarea id="code" spellcheck="false">int x;
+  </div>
+
+  <div class="case-body">
+    <div class="brad tl"></div>
+    <div class="brad tr"></div>
+
+    <h1 class="case-title">Case File: Source Compilation</h1>
+    <p class="case-subtitle">Submit a program below for full processing — lexical, syntactic, and semantic review, closing with a Three Address Code deposition.</p>
+
+    <div class="pipeline">
+      <span>LEXER</span><span class="arrow">&rarr;</span>
+      <span>PARSER</span><span class="arrow">&rarr;</span>
+      <span>AST</span><span class="arrow">&rarr;</span>
+      <span>SYMBOL TABLE</span><span class="arrow">&rarr;</span>
+      <span>SEMANTIC REVIEW</span><span class="arrow">&rarr;</span>
+      <span>TAC</span>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="panel-label">
+          <span>EXHIBIT A — SUBMITTED SOURCE</span>
+          <span class="exhibit-tag">.MC</span>
+        </div>
+        <textarea id="code" spellcheck="false">int x;
 int y;
 x = 10;
 y = 0;
@@ -131,28 +284,39 @@ while (x > 0) {
     x = x - 1;
 }
 print y;</textarea>
-  </div>
+      </div>
 
-  <div class="panel">
-    <div class="panel-header">
-      <span>Output</span>
-      <span class="status" id="status"></span>
+      <div>
+        <div class="panel-label">
+          <span>INVESTIGATION REPORT</span>
+          <span class="status-line" id="statusLine">awaiting submission</span>
+        </div>
+        <div class="output-wrap">
+          <pre id="output">No case opened yet. Submit source and press PROCESS CASE.</pre>
+          <div class="stamp" id="stamp">CASE CLOSED</div>
+        </div>
+      </div>
     </div>
-    <pre id="output">Click "Compile" to run your program through the compiler.</pre>
+
+    <div class="actions">
+      <span class="status-line">Every case is compiled locally by the Syndicate X front-end.</span>
+      <button id="runBtn">Process Case ▸</button>
+    </div>
   </div>
-</main>
+</div>
 
 <script>
 const runBtn = document.getElementById('runBtn');
 const output = document.getElementById('output');
-const status = document.getElementById('status');
+const stamp = document.getElementById('stamp');
+const statusLine = document.getElementById('statusLine');
 const codeBox = document.getElementById('code');
 
 runBtn.addEventListener('click', async () => {
   runBtn.disabled = true;
-  status.textContent = 'Compiling...';
-  status.className = 'status';
-  output.textContent = '';
+  statusLine.textContent = 'processing case...';
+  stamp.classList.remove('show', 'error');
+  output.textContent = 'Reviewing exhibit...';
 
   try {
     const res = await fetch('/compile', {
@@ -162,17 +326,16 @@ runBtn.addEventListener('click', async () => {
     const text = await res.text();
     output.textContent = text;
 
-    if (text.includes('Error') || text.includes('error')) {
-      status.textContent = 'Finished with errors';
-      status.className = 'status err';
-    } else {
-      status.textContent = 'Success';
-      status.className = 'status ok';
-    }
+    const hasError = /(Syntax Error|Semantic Error|Lexical Error) at line/i.test(text);
+    stamp.textContent = hasError ? 'FLAGGED' : 'CASE CLOSED';
+    stamp.classList.toggle('error', hasError);
+    stamp.classList.add('show');
+    statusLine.textContent = hasError ? 'discrepancies noted' : 'no discrepancies found';
   } catch (e) {
-    output.textContent = 'Failed to reach server: ' + e;
-    status.textContent = 'Connection error';
-    status.className = 'status err';
+    output.textContent = 'Could not reach the compiler service: ' + e;
+    stamp.textContent = 'FLAGGED';
+    stamp.classList.add('show', 'error');
+    statusLine.textContent = 'connection failed';
   } finally {
     runBtn.disabled = false;
   }
